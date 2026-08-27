@@ -380,8 +380,7 @@ input[type="date"]::-webkit-datetime-edit-year-field{
       </div>
       <div class="toolbar">
         <span class="pill warn">Domingos fechados</span>
-        <span class="pill warn">Almoço 12:00–13:00</span>
-        <span class="pill ok">Funcionamento 10:00–21:00</span>
+        <span class="pill ok">Funcionamento 15:00–21:00</span>
       </div>
     </div>
     <div class="cardBody">
@@ -399,8 +398,8 @@ input[type="date"]::-webkit-datetime-edit-year-field{
       <div class="row">
         <label>Tempo</label>
         <div class="seg">
-          <button type="button" id="c_btn30" class="active">30 minutos</button>
-          <button type="button" id="c_btn60">60 minutos</button>
+          <button type="button" id="c_btn15" class="active">15 minutos</button>
+          <button type="button" id="c_btn30">30 minutos</button>
         </div>
       </div>
 
@@ -450,13 +449,15 @@ input[type="date"]::-webkit-datetime-edit-year-field{
 
       <div class="toolbar" style="justify-content:space-between">
         <span class="pill ok"><b>Total:</b> R$ <span id="c_total">—</span></span>
-        <button type="button" class="primary" id="c_sendBtn">Enviar no WhatsApp</button>
+        <button type="button" class="primary" id="c_sendBtn">Enviar no WhatsApp para confirmar</button>
       </div>
+      <div class="muted" style="margin-top:10px; font-size:12px"><b>Importante:</b> para solicitar a confirmação do agendamento, clique no botão e envie a mensagem no WhatsApp. A confirmação final é feita pela equipe MW Gamer.</div>
 
       <div class="divider"></div>
       <div class="noticeBox">
         <b>Como funciona:</b> ao enviar, seu pedido entra como <b>PENDENTE</b> na agenda.
-        A equipe confirma o pagamento e marca como <b>PAGO</b>. Depois disso, o horário fica bloqueado para novos pedidos (respeitando capacidade).
+        <b>Para concluir seu pedido, é obrigatório clicar no botão <span style="white-space:nowrap">“Enviar no WhatsApp”</span>.</b><br>
+        Seu pedido só será encaminhado para a equipe após essa ação. A equipe MW Gamer analisa a disponibilidade, confirma o pagamento quando necessário e confirma o agendamento. Até a confirmação, o pedido permanece como <b>PENDENTE</b>.
       </div>
     </div>
   </section>
@@ -475,6 +476,7 @@ input[type="date"]::-webkit-datetime-edit-year-field{
             <button class="ghost small" id="a_prevDayBtn" type="button">◀ Dia</button>
             <button class="ghost small" id="a_nextDayBtn" type="button">Dia ▶</button>
             <button class="primary small" id="a_newBtn" type="button">+ Novo</button>
+            <button class="danger small" id="a_blockDayBtn" type="button">Bloquear dia</button>
             <button class="danger small" id="a_resetBtn" type="button">Zerar</button>
           </div>
         </div>
@@ -554,7 +556,7 @@ input[type="date"]::-webkit-datetime-edit-year-field{
             <div class="noticeBox">
               <b>Notificação:</b> quando entrar pedido novo, ele aparece como <b>PENDENTE</b> e o navegador faz um aviso (toast) + contagem em “Pendentes”.
               <div class="divider"></div>
-              <b>Dica:</b> para confirmar, clique em <b>WhatsApp</b> → abre conversa → ao receber o pagamento, clique em <b>Marcar pago</b>.
+              <b>Dica:</b> o cliente precisa clicar em <b>Enviar no WhatsApp</b> para encaminhar o pedido à equipe. Depois da confirmação da equipe, use <b>Marcar pago</b> quando aplicável.
             </div>
           </div>
 
@@ -590,7 +592,7 @@ input[type="date"]::-webkit-datetime-edit-year-field{
         </div>
         <div>
           <label>Horário (início)</label>
-          <input type="time" id="m_start" value="10:00" />
+          <input type="time" id="m_start" value="15:00" step="900" />
         </div>
       </div>
 
@@ -598,8 +600,8 @@ input[type="date"]::-webkit-datetime-edit-year-field{
         <div>
           <label>Duração</label>
           <select id="m_duration">
-            <option value="30" selected>30 min</option>
-            <option value="60">60 min</option>
+            <option value="15" selected>15 min</option>
+            <option value="30">30 min</option>
           </select>
         </div>
         <div>
@@ -698,14 +700,14 @@ input[type="date"]::-webkit-datetime-edit-year-field{
   const CONFIG = {
     CAPACITY: { VR: 5, PS5: 2 }, // PS5 = consoles
     PRICING: {
-      VR: { "30": 20, "60": 35 }, // por pessoa
-      PS5: { "30": 15, "60": 30 } // por console (1 PS5)
+      // Mantidos os valores das antigas opções, agora nas novas durações equivalentes solicitadas.
+      VR: { "15": 20, "30": 35 }, // por pessoa
+      PS5: { "15": 15, "30": 30 } // por console (1 PS5)
     },
-    SLOT_MINUTES: 30,
-    DAY_START: 10,
-    DAY_END: 21, // último slot 20:30
+    SLOT_MINUTES: 15,
+    DAY_START: 15,
+    DAY_END: 21, // encerramento do funcionamento às 21:00
     CLOSED_WEEKDAYS: [0], // 0=Domingo
-    LUNCH_BREAKS: [{ start: "12:00", end: "13:00" }],
     ADDRESS_LINE: "Endereço: R. Espírito Santo, 25 - Centro, Poços de Caldas - MG, 37701-037",
     RULE_LINE: "Chegar 10 min antes. Atrasos podem reduzir o tempo para manter a agenda.",
     WHATSAPP_NUMBER_E164: "5535999030721",
@@ -864,14 +866,6 @@ const minToTime = (m) => `${pad2(Math.floor(m/60))}:${pad2(m%60)}`;
     const [y,m,d] = dateStr.split("-").map(Number);
     const dt = new Date(y,m-1,d);
     return (CONFIG.CLOSED_WEEKDAYS||[]).includes(dt.getDay());
-  }
-  function inLunchBreak(startMin,endMin){
-    for(const br of (CONFIG.LUNCH_BREAKS||[])){
-      const bStart = timeToMin(br.start);
-      const bEnd = timeToMin(br.end);
-      if(overlaps(startMin,endMin,bStart,bEnd)) return true;
-    }
-    return false;
   }
   function normalizePhone(v){
     const digits = (v || "").replace(/\D/g,"").slice(0,11);
@@ -1042,6 +1036,17 @@ const minToTime = (m) => `${pad2(Math.floor(m/60))}:${pad2(m%60)}`;
     return bookings.some(b => b.type === "BLOQUEIO" && (!ignoreId || b.id !== ignoreId) && overlaps(startMin,endMin,b.start_min,b.end_min));
   }
 
+  function findFullDayBlock(bookings){
+    const start = CONFIG.DAY_START * 60;
+    const end = CONFIG.DAY_END * 60;
+    return bookings.find(b =>
+      b.type === "BLOQUEIO" &&
+      Number(b.start_min) <= start &&
+      Number(b.end_min) >= end &&
+      (b.notes === "Bloqueio total do dia" || b.name === "DIA BLOQUEADO")
+    ) || null;
+  }
+
   function canCreateOrUpdate(bookings, b){
     if(b.type !== "BLOQUEIO"){
       if(hasBlock(bookings, b.start_min, b.end_min, b.id || null)){
@@ -1060,13 +1065,13 @@ const minToTime = (m) => `${pad2(Math.floor(m/60))}:${pad2(m%60)}`;
   // ==========================================================
   // CLIENT VIEW LOGIC
   // ==========================================================
-  const cState = { type:"VR", duration:30, people:1, date:"", startMin:null, showAllSlots:true };
+  const cState = { type:"VR", duration:15, people:1, date:"", startMin:null, showAllSlots:true };
 
   function cPriceHint(){
     if(cState.type === "VR"){
-      return `VR por pessoa: 30 min = R$ ${CONFIG.PRICING.VR["30"]} • 60 min = R$ ${CONFIG.PRICING.VR["60"]}`;
+      return `VR por pessoa: 15 min = R$ ${CONFIG.PRICING.VR["15"]} • 30 min = R$ ${CONFIG.PRICING.VR["30"]}`;
     }
-    return `PS5 (1 console): 30 min = R$ ${CONFIG.PRICING.PS5["30"]} • 60 min = R$ ${CONFIG.PRICING.PS5["60"]}`;
+    return `PS5 (1 console): 15 min = R$ ${CONFIG.PRICING.PS5["15"]} • 30 min = R$ ${CONFIG.PRICING.PS5["30"]}`;
   }
 
   function cSetActive(btns, activeId){ btns.forEach(b => b.classList.toggle("active", b.id === activeId)); }
@@ -1126,8 +1131,8 @@ const minToTime = (m) => `${pad2(Math.floor(m/60))}:${pad2(m%60)}`;
       return;
     }
 
-    const openStart = timeToMin("10:00");
-    const openEnd = timeToMin("21:00");
+    const openStart = CONFIG.DAY_START * 60;
+    const openEnd = CONFIG.DAY_END * 60;
     const duration = cState.duration;
 
     const all = [];
@@ -1135,7 +1140,6 @@ const minToTime = (m) => `${pad2(Math.floor(m/60))}:${pad2(m%60)}`;
       const startMin = t;
       const endMin = startMin + duration;
       if(endMin > openEnd) continue;
-      if(inLunchBreak(startMin, endMin)) continue;
 
       // disponibilidade respeitando capacidade e bloqueios
       if(hasBlock(bookings, startMin, endMin)) continue;
@@ -1238,7 +1242,7 @@ const minToTime = (m) => `${pad2(Math.floor(m/60))}:${pad2(m%60)}`;
     const chk = canCreateOrUpdate(bookings, booking);
     if(!chk.ok){ toast(chk.reason); await cBuildSlots(); return; }
 
-    // inserir
+    // inserir o pedido como PENDENTE antes de abrir o WhatsApp
     const client = ensureSupabase();
     const { data, error } = await client.from(TABLE).insert(booking).select("*").single();
     if(error){
@@ -1248,7 +1252,7 @@ const minToTime = (m) => `${pad2(Math.floor(m/60))}:${pad2(m%60)}`;
     }
 
     // atualizar UI
-    toast("Pedido enviado! Abrindo WhatsApp…");
+    toast("Pedido registrado como PENDENTE. Agora envie a mensagem no WhatsApp para a equipe confirmar.");
     await cBuildSlots();
 
     // WhatsApp
@@ -1301,8 +1305,8 @@ const minToTime = (m) => `${pad2(Math.floor(m/60))}:${pad2(m%60)}`;
         <b>Domingo</b> • Fechado (sem agendamentos)
       </span>`;
     } else {
-      noticeEl.innerHTML = `<span class="pill warn"><b>Almoço</b> • 12:00–13:00 indisponível</span>
-      <span class="pill ok"><b>Regras</b> • Datas passadas bloqueadas</span>`;
+      noticeEl.innerHTML = `<span class="pill ok"><b>Funcionamento</b> • 15:00–21:00</span>
+      <span class="pill ok"><b>Regras</b> • Datas passadas bloqueadas • Intervalos de 15 min</span>`;
     }
 
     let bookings = [];
@@ -1315,6 +1319,13 @@ const minToTime = (m) => `${pad2(Math.floor(m/60))}:${pad2(m%60)}`;
     }
 
     aKnownIds = new Set((bookings||[]).map(x=>x.id));
+    const fullDayBlock = findFullDayBlock(bookings);
+    const blockDayBtn = $("a_blockDayBtn");
+    if(blockDayBtn){
+      blockDayBtn.textContent = fullDayBlock ? "Desbloquear dia" : "Bloquear dia";
+      blockDayBtn.classList.toggle("primary", !!fullDayBlock);
+      blockDayBtn.classList.toggle("danger", !fullDayBlock);
+    }
     aRenderKpis(bookings);
   aRenderQuickPendings(bookings);
     aRenderSlots(date, bookings);
@@ -1443,7 +1454,6 @@ function aRenderQuickPendings(bookings){
       for(let m=0; m<60; m+=CONFIG.SLOT_MINUTES){
         const startMin = h*60 + m;
         const endMin = startMin + CONFIG.SLOT_MINUTES;
-        if(inLunchBreak(startMin, endMin)) continue;
 
         const blocked = hasBlock(bookings, startMin, endMin);
         const usedVR = capacityUsed(bookings, "VR", startMin, endMin);
@@ -1643,7 +1653,6 @@ function aRenderQuickPendings(bookings){
   function aOpenModalCreate({date, startMin, type}){
     if(isPastDate(date)){ toast("Data anterior bloqueada."); return; }
     if(isClosedWeekday(date)){ toast("Domingo é fechado."); return; }
-    if(inLunchBreak(startMin, startMin + 30)){ toast("Horário de almoço (12:00–13:00)."); return; }
 
     aEditingId = null;
     $("modalTitle").textContent = "Novo agendamento";
@@ -1652,7 +1661,7 @@ function aRenderQuickPendings(bookings){
 
     $("m_date").value = date;
     $("m_start").value = minToTime(startMin);
-    $("m_duration").value = "30";
+    $("m_duration").value = "15";
     $("m_type").value = type || "VR";
 
     updateModalQtyOptions();
@@ -1682,7 +1691,17 @@ function aRenderQuickPendings(bookings){
 
     $("m_date").value = b.date;
     $("m_start").value = minToTime(b.start_min);
-    $("m_duration").value = String(b.end_min - b.start_min);
+    const legacyDuration = b.end_min - b.start_min;
+    const durationSelect = $("m_duration");
+    [...durationSelect.options].filter(opt => opt.dataset.legacy === "1").forEach(opt => opt.remove());
+    if(![15,30].includes(legacyDuration)){
+      const legacy = document.createElement("option");
+      legacy.value = String(legacyDuration);
+      legacy.textContent = `${legacyDuration} min (agendamento antigo)`;
+      legacy.dataset.legacy = "1";
+      durationSelect.appendChild(legacy);
+    }
+    durationSelect.value = String(legacyDuration);
     $("m_type").value = b.type;
 
     updateModalQtyOptions();
@@ -1739,9 +1758,9 @@ function aRenderQuickPendings(bookings){
     if(b.start_min < CONFIG.DAY_START*60 || b.start_min >= CONFIG.DAY_END*60) return "Horário fora do funcionamento.";
     if(b.end_min > CONFIG.DAY_END*60) return "Duração ultrapassa o horário de funcionamento.";
     if(b.end_min <= b.start_min) return "Horário inválido.";
-    if(inLunchBreak(b.start_min, b.end_min)) return "Horário indisponível (intervalo de almoço: 12:00–13:00).";
-
-    if(b.type !== "BLOQUEIO"){
+    if(b.start_min % CONFIG.SLOT_MINUTES !== 0) return `Use horários de ${CONFIG.SLOT_MINUTES} em ${CONFIG.SLOT_MINUTES} minutos.`;
+    if((b.end_min - b.start_min) % CONFIG.SLOT_MINUTES !== 0) return `A duração deve respeitar intervalos de ${CONFIG.SLOT_MINUTES} minutos.`;
+     if(b.type !== "BLOQUEIO"){
       if(!b.name) return "Informe o nome do cliente.";
       if(b.type === "PS5" && !(b.qty === 1 || b.qty === 2)) return "PS5 aceita apenas 1 ou 2 pessoas.";
       if(b.type === "VR" && (b.qty < 1 || b.qty > CONFIG.CAPACITY.VR)) return `VR aceita 1 a ${CONFIG.CAPACITY.VR} pessoas.`;
@@ -1815,6 +1834,42 @@ function aRenderQuickPendings(bookings){
     }
   }
 
+  async function toggleBlockDay(){
+    const date = $("a_date").value;
+    if(!date) return;
+    const bookings = getCachedDay(date);
+    const existing = findFullDayBlock(bookings);
+
+    try{
+      if(existing){
+        if(!confirm(`Desbloquear todos os novos agendamentos do dia ${formatBR(date)}? Os agendamentos existentes não serão apagados.`)) return;
+        await adminApi("delete", { id: existing.id });
+        toast("Dia desbloqueado para novos agendamentos.");
+      } else {
+        if(!confirm(`Bloquear TODOS os novos agendamentos do dia ${formatBR(date)}? Os agendamentos já existentes serão mantidos.`)) return;
+        const booking = {
+          date,
+          start_min: CONFIG.DAY_START * 60,
+          end_min: CONFIG.DAY_END * 60,
+          type: "BLOQUEIO",
+          qty: 0,
+          status: "PENDENTE",
+          name: "DIA BLOQUEADO",
+          phone: "",
+          price: null,
+          notes: "Bloqueio total do dia",
+          source: "admin_day_block"
+        };
+        await adminApi("upsert", { booking });
+        toast("Dia bloqueado para novos agendamentos.");
+      }
+      await aRender();
+    }catch(e){
+      console.error(e);
+      toast(e.message || "Não foi possível alterar o bloqueio do dia.");
+    }
+  }
+
   async function resetAll(){
     if(!confirm("Apagar TODOS os agendamentos do banco? (irreversível)")) return;
     try{
@@ -1868,12 +1923,12 @@ function aRenderQuickPendings(bookings){
     const preview = {
       date,
       start_min: CONFIG.DAY_START*60,
-      end_min: CONFIG.DAY_START*60 + 30,
+      end_min: CONFIG.DAY_START*60 + 15,
       type: "VR",
       qty: 2,
       name: "Cliente",
       phone: "",
-      price: Number(suggestedTotal("VR", 30, 2)),
+      price: Number(suggestedTotal("VR", 15, 2)),
       status: "PENDENTE",
       notes: "Exemplo"
     };
@@ -2053,20 +2108,20 @@ function aRenderQuickPendings(bookings){
       cSyncUI();
     });
 
+    $("c_btn15").addEventListener("click", ()=>{
+      cState.duration = 15;
+      cState.showAllSlots = false;
+      cState.startMin = null;
+      cSetActive([$("c_btn15"),$("c_btn30")], "c_btn15");
+      cSyncUI();
+    });
     $("c_btn30").addEventListener("click", ()=>{
       cState.duration = 30;
       cState.showAllSlots = false;
       cState.startMin = null;
-      cSetActive([$("c_btn30"),$("c_btn60")], "c_btn30");
+      cSetActive([$("c_btn15"),$("c_btn30")], "c_btn30");
       cSyncUI();
-});
-    $("c_btn60").addEventListener("click", ()=>{
-      cState.duration = 60;
-      cState.showAllSlots = false;
-      cState.startMin = null;
-      cSetActive([$("c_btn30"),$("c_btn60")], "c_btn60");
-      cSyncUI();
-});
+    });
 
     $("c_date").addEventListener("change", async ()=>{
       const v = $("c_date").value;
@@ -2145,11 +2200,12 @@ function aRenderQuickPendings(bookings){
 
     $("a_newBtn").addEventListener("click", ()=>{
       const date = $("a_date").value;
-      aOpenModalCreate({ date, startMin: timeToMin("10:00"), type: "VR" });
+      aOpenModalCreate({ date, startMin: CONFIG.DAY_START * 60, type: "VR" });
     });
 
     $("a_downloadCsvBtn").addEventListener("click", downloadDayCsv);
     $("a_copyWppPreviewBtn").addEventListener("click", copyWppPreview);
+    $("a_blockDayBtn").addEventListener("click", toggleBlockDay);
     $("a_resetBtn").addEventListener("click", resetAll);
 
     // modal
